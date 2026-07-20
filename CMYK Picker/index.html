@@ -1,0 +1,148 @@
+<!DOCTYPE html>
+<!-- saved from url=(0047)file:///Users/studioparadygm/Desktop/index.html -->
+<html lang="fr"><head><meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
+
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Générateur CMJN</title>
+<style>
+  body{
+    margin:0; min-height:100vh;
+    display:flex; flex-direction:column; align-items:center; justify-content:center; gap:22px;
+    background:#15171b; color:#eee;
+    font-family:system-ui,sans-serif;
+    padding:24px;
+  }
+  h1{font-size:15px; font-weight:600; letter-spacing:.02em; margin:0; color:#bbb;}
+  .swatch{width:200px; height:200px; border-radius:14px; border:2px solid rgba(255,255,255,.12);}
+  .sliders{width:320px; max-width:100%; display:flex; flex-direction:column; gap:14px;}
+  .row{display:flex; align-items:center; gap:12px;}
+  .dot{width:12px; height:12px; border-radius:50%; flex-shrink:0;}
+  .row label{font-size:13px; color:#ccc; width:14px; flex-shrink:0; font-weight:600;}
+  .row input[type=range]{flex:1;}
+  .row span{font-family:'JetBrains Mono',monospace; font-size:13px; color:#ddd; width:40px; text-align:right;}
+  #c{accent-color:#00aeef;} #m{accent-color:#ec1e79;} #y{accent-color:#ffd400;} #k{accent-color:#bbb;}
+  .info{
+    font-family:'JetBrains Mono',monospace; font-size:14px; color:#ddd;
+    display:flex; flex-direction:column; gap:6px; align-items:center;
+    text-align:center;
+  }
+  .info b{color:#fff;}
+  .tac{font-size:12px; color:#888;}
+  .tac.over{color:#ff6a3d;}
+</style>
+</head>
+<body>
+  <h1>Générateur de couleur CMJN</h1>
+  <div class="swatch" id="swatch" style="background: rgb(121, 42, 136);"></div>
+
+  <div class="sliders">
+    <div class="row">
+      <span class="dot" style="background:#00aeef"></span>
+      <label for="c">C</label>
+      <input type="range" id="c" min="0" max="100" value="65">
+      <span id="cVal">65%</span>
+    </div>
+    <div class="row">
+      <span class="dot" style="background:#ec1e79"></span>
+      <label for="m">M</label>
+      <input type="range" id="m" min="0" max="100" value="95">
+      <span id="mVal">95%</span>
+    </div>
+    <div class="row">
+      <span class="dot" style="background:#ffd400"></span>
+      <label for="y">J</label>
+      <input type="range" id="y" min="0" max="100" value="0">
+      <span id="yVal">0%</span>
+    </div>
+    <div class="row">
+      <span class="dot" style="background:#bbb"></span>
+      <label for="k">N</label>
+      <input type="range" id="k" min="0" max="100" value="0">
+      <span id="kVal">0%</span>
+    </div>
+  </div>
+
+  <div class="info">
+    <div><b id="hexOut">#792A88</b></div>
+    <div id="rgbOut">rgb(121, 42, 136)</div>
+    <div class="tac" id="tacOut">Couverture d'encre totale : 160%</div>
+  </div>
+
+<script>
+(function(){
+  "use strict";
+  const c=document.getElementById("c"), m=document.getElementById("m"),
+        y=document.getElementById("y"), k=document.getElementById("k");
+  const cVal=document.getElementById("cVal"), mVal=document.getElementById("mVal"),
+        yVal=document.getElementById("yVal"), kVal=document.getElementById("kVal");
+  const swatch=document.getElementById("swatch"), hexOut=document.getElementById("hexOut"),
+        rgbOut=document.getElementById("rgbOut"), tacOut=document.getElementById("tacOut");
+
+  // --- Modèle de Neugebauer / Demichel ---
+  // Couleurs mesurées typiques des 8 aplats/surimpressions d'encres process
+  // (papier couché + C, M, J solides et leurs recouvrements deux-à-deux et trois-à-trois).
+  // Ce ne sont PAS des primaires RVB idéales : elles reflètent le fait que les pigments
+  // réels se chevauchent et donnent des mélanges plus sales/ternes qu'un calcul RVB pur.
+  const PRIM = {
+    w:  [250,249,244],  // papier couché, léger blanc cassé
+    c:  [0,174,239],
+    m:  [236,0,140],
+    y:  [255,241,0],
+    cm: [62,52,125],    // C+M -> recalé sur un échantillon réel Photoshop (C65 M95 -> RGB 121,42,136)
+    cy: [0,147,69],     // C+J -> vert olive, pas un vert flashy
+    my: [237,28,36],    // M+J -> rouge d'impression
+    cmy:[35,24,27]      // C+M+J -> brun-noir sale, jamais un noir net
+  };
+  const K_INK=[35,34,33]; // noir d'encre réel (pas 0,0,0)
+
+  function cmykToRgb(C,M,Y,K){
+    // fractions de surface de chaque combinaison, selon les équations de Demichel
+    const aw = (1-C)*(1-M)*(1-Y);
+    const ac = C*(1-M)*(1-Y);
+    const am = (1-C)*M*(1-Y);
+    const ay = (1-C)*(1-M)*Y;
+    const acm= C*M*(1-Y);
+    const acy= C*(1-M)*Y;
+    const amy= (1-C)*M*Y;
+    const acmy=C*M*Y;
+
+    let r = aw*PRIM.w[0]+ac*PRIM.c[0]+am*PRIM.m[0]+ay*PRIM.y[0]
+           +acm*PRIM.cm[0]+acy*PRIM.cy[0]+amy*PRIM.my[0]+acmy*PRIM.cmy[0];
+    let g = aw*PRIM.w[1]+ac*PRIM.c[1]+am*PRIM.m[1]+ay*PRIM.y[1]
+           +acm*PRIM.cm[1]+acy*PRIM.cy[1]+amy*PRIM.my[1]+acmy*PRIM.cmy[1];
+    let b = aw*PRIM.w[2]+ac*PRIM.c[2]+am*PRIM.m[2]+ay*PRIM.y[2]
+           +acm*PRIM.cm[2]+acy*PRIM.cy[2]+amy*PRIM.my[2]+acmy*PRIM.cmy[2];
+
+    // le noir s'ajoute comme une couche d'encre séparée par-dessus le mélange CMJ
+    r = r*(1-K) + K_INK[0]*K;
+    g = g*(1-K) + K_INK[1]*K;
+    b = b*(1-K) + K_INK[2]*K;
+
+    return [Math.round(r), Math.round(g), Math.round(b)];
+  }
+
+  function update(){
+    const C=c.value/100, M=m.value/100, Y=y.value/100, K=k.value/100;
+    const [r,g,b]=cmykToRgb(C,M,Y,K);
+    const hex="#"+[r,g,b].map(v=>v.toString(16).padStart(2,"0")).join("").toUpperCase();
+
+    swatch.style.background=`rgb(${r},${g},${b})`;
+    hexOut.textContent=hex;
+    rgbOut.textContent=`rgb(${r}, ${g}, ${b})`;
+
+    cVal.textContent=c.value+"%"; mVal.textContent=m.value+"%";
+    yVal.textContent=y.value+"%"; kVal.textContent=k.value+"%";
+
+    const tac=(+c.value)+(+m.value)+(+y.value)+(+k.value);
+    tacOut.textContent=`Couverture d'encre totale : ${tac}%`;
+    tacOut.className="tac"+(tac>320?" over":"");
+    if(tac>320) tacOut.textContent+=" — au-delà de la limite offset courante (≈320%)";
+  }
+
+  [c,m,y,k].forEach(el=>el.addEventListener("input",update));
+  update();
+})();
+</script>
+
+
+</body></html>
