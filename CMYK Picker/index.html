@@ -1,82 +1,192 @@
 <!DOCTYPE html>
-<!-- saved from url=(0047)file:///Users/studioparadygm/Desktop/index.html -->
 <html lang="fr"><head><meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
 
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Générateur CMJN</title>
+<meta name="description" content="Générateur de couleur CMJN : convertissez une couleur en valeurs d'impression CMJN réalistes, avec calcul de la couverture d'encre totale (TAC).">
+<title>Générateur CMJN — Studio Paradygm</title>
 <style>
+  *{box-sizing:border-box;}
   body{
     margin:0; min-height:100vh;
-    display:flex; flex-direction:column; align-items:center; justify-content:center; gap:22px;
+    display:flex; flex-direction:column; align-items:center;
     background:#15171b; color:#eee;
     font-family:system-ui,sans-serif;
     padding:24px;
   }
-  h1{font-size:15px; font-weight:600; letter-spacing:.02em; margin:0; color:#bbb;}
+  .page{width:100%; max-width:420px; display:flex; flex-direction:column; align-items:center; gap:20px;}
+
+  header{text-align:center; display:flex; flex-direction:column; gap:6px;}
+  h1{font-size:16px; font-weight:600; letter-spacing:.02em; margin:0; color:#eee;}
+  .subtitle{font-size:12.5px; color:#999; margin:0; line-height:1.4;}
+
+  .ad-slot{width:100%; min-height:0;}
+
   .swatch{width:200px; height:200px; border-radius:14px; border:2px solid rgba(255,255,255,.12);}
+
+  .hexInput{width:320px; max-width:100%; display:flex; flex-direction:column; gap:6px;}
+  .hexInput label{font-size:12px; color:#999;}
+  .hexRow{display:flex; gap:8px;}
+  .hexRow input[type=text]{
+    flex:1; min-width:0; background:#1e2126; border:1px solid #333; border-radius:8px;
+    color:#eee; font-family:'JetBrains Mono',monospace; font-size:14px; padding:9px 10px;
+  }
+  .hexRow input[type=text]:focus, button:focus-visible, input[type=range]:focus-visible{
+    outline:2px solid #00aeef; outline-offset:1px;
+  }
+  .hexRow button, .actions button{
+    background:#2a2e35; border:1px solid #3a3e46; color:#eee; border-radius:8px;
+    padding:9px 14px; font-size:13px; cursor:pointer; white-space:nowrap;
+  }
+  .hexRow button:hover, .actions button:hover{background:#343943;}
+  .hexRow.error input[type=text]{border-color:#ff6a3d;}
+  .hexHint{font-size:11px; color:#e05a3a; min-height:14px;}
+
   .sliders{width:320px; max-width:100%; display:flex; flex-direction:column; gap:14px;}
-  .row{display:flex; align-items:center; gap:12px;}
+  .row{display:flex; align-items:center; gap:10px;}
   .dot{width:12px; height:12px; border-radius:50%; flex-shrink:0;}
   .row label{font-size:13px; color:#ccc; width:14px; flex-shrink:0; font-weight:600;}
   .row input[type=range]{flex:1;}
-  .row span{font-family:'JetBrains Mono',monospace; font-size:13px; color:#ddd; width:40px; text-align:right;}
-  #c{accent-color:#00aeef;} #m{accent-color:#ec1e79;} #y{accent-color:#ffd400;} #k{accent-color:#bbb;}
-  .info{
-    font-family:'JetBrains Mono',monospace; font-size:14px; color:#ddd;
-    display:flex; flex-direction:column; gap:6px; align-items:center;
-    text-align:center;
+  .row input[type=number]{
+    width:52px; background:#1e2126; border:1px solid #333; border-radius:6px;
+    color:#ddd; font-family:'JetBrains Mono',monospace; font-size:13px; text-align:right;
+    padding:4px 6px; -moz-appearance:textfield;
   }
-  .info b{color:#fff;}
-  .tac{font-size:12px; color:#888;}
+  #c{accent-color:#00aeef;} #m{accent-color:#ec1e79;} #y{accent-color:#ffd400;} #k{accent-color:#bbb;}
+
+  .actions{display:flex; gap:10px;}
+
+  .info{
+    width:320px; max-width:100%;
+    font-family:'JetBrains Mono',monospace; font-size:14px; color:#ddd;
+    display:flex; flex-direction:column; gap:8px; align-items:stretch;
+  }
+  .infoRow{display:flex; align-items:center; justify-content:center; gap:10px;}
+  .infoRow b{color:#fff;}
+  .copyBtn{
+    background:none; border:1px solid #3a3e46; color:#999; border-radius:6px;
+    font-family:system-ui,sans-serif; font-size:11px; padding:3px 8px; cursor:pointer;
+    flex-shrink:0;
+  }
+  .copyBtn:hover{color:#eee; border-color:#666;}
+  .copyBtn.copied{color:#4caf50; border-color:#4caf50;}
+
+  .tacWrap{display:flex; flex-direction:column; gap:6px; align-items:center; margin-top:4px;}
+  .tacBar{width:100%; height:8px; background:#25282e; border-radius:4px; overflow:hidden;}
+  .tacFill{height:100%; width:0%; background:#4caf50; transition:width .15s, background .15s;}
+  .tac{font-size:12px; color:#888; text-align:center;}
+  .tac.warn{color:#e0a13a;}
   .tac.over{color:#ff6a3d;}
+
+  .help{
+    width:320px; max-width:100%; font-size:12px; color:#888; line-height:1.5;
+    text-align:center; margin:0;
+  }
+
+  footer{font-size:11px; color:#666; text-align:center;}
+  footer a{color:#888;}
+
+  @media (max-width:380px){
+    .swatch{width:160px; height:160px;}
+    .sliders, .info, .hexInput, .help{width:100%;}
+  }
 </style>
 </head>
 <body>
-  <h1>Générateur de couleur CMJN</h1>
+<div class="page">
+
+  <header>
+    <h1>Générateur de couleur CMJN</h1>
+    <p class="subtitle">Réglez les curseurs ou collez un code HEX pour obtenir instantanément l'aperçu couleur et les valeurs d'impression.</p>
+  </header>
+
+  <!-- Emplacement publicité (haut de page) — voir instructions AdSense
+  <div class="ad-slot">
+    <ins class="adsbygoogle" style="display:block" data-ad-client="ca-pub-XXXXXXXXXXXXXXXX" data-ad-slot="XXXXXXXXXX" data-ad-format="auto" data-full-width-responsive="true"></ins>
+    <script>(adsbygoogle = window.adsbygoogle || []).push({});</script>
+  </div>
+  -->
+
   <div class="swatch" id="swatch" style="background: rgb(121, 42, 136);"></div>
+
+  <div class="hexInput" id="hexWrap">
+    <label for="hexIn">Partir d'un code HEX</label>
+    <div class="hexRow" id="hexRow">
+      <input type="text" id="hexIn" placeholder="#792A88" maxlength="7" autocomplete="off" spellcheck="false">
+      <button id="hexBtn" type="button">Convertir</button>
+    </div>
+    <div class="hexHint" id="hexHint" role="alert"></div>
+  </div>
 
   <div class="sliders">
     <div class="row">
       <span class="dot" style="background:#00aeef"></span>
       <label for="c">C</label>
       <input type="range" id="c" min="0" max="100" value="65">
-      <span id="cVal">65%</span>
+      <input type="number" id="cNum" min="0" max="100" value="65">
     </div>
     <div class="row">
       <span class="dot" style="background:#ec1e79"></span>
       <label for="m">M</label>
       <input type="range" id="m" min="0" max="100" value="95">
-      <span id="mVal">95%</span>
+      <input type="number" id="mNum" min="0" max="100" value="95">
     </div>
     <div class="row">
       <span class="dot" style="background:#ffd400"></span>
       <label for="y">J</label>
       <input type="range" id="y" min="0" max="100" value="0">
-      <span id="yVal">0%</span>
+      <input type="number" id="yNum" min="0" max="100" value="0">
     </div>
     <div class="row">
       <span class="dot" style="background:#bbb"></span>
       <label for="k">N</label>
       <input type="range" id="k" min="0" max="100" value="0">
-      <span id="kVal">0%</span>
+      <input type="number" id="kNum" min="0" max="100" value="0">
     </div>
   </div>
 
-  <div class="info">
-    <div><b id="hexOut">#792A88</b></div>
-    <div id="rgbOut">rgb(121, 42, 136)</div>
-    <div class="tac" id="tacOut">Couverture d'encre totale : 160%</div>
+  <div class="actions">
+    <button id="resetBtn" type="button">Réinitialiser</button>
   </div>
+
+  <div class="info">
+    <div class="infoRow"><b id="hexOut">#792A88</b><button class="copyBtn" data-copy="hex">Copier</button></div>
+    <div class="infoRow"><span id="rgbOut">rgb(121, 42, 136)</span><button class="copyBtn" data-copy="rgb">Copier</button></div>
+    <div class="infoRow"><span id="cmykOut">C65 M95 J0 N0</span><button class="copyBtn" data-copy="cmyk">Copier</button></div>
+
+    <div class="tacWrap">
+      <div class="tacBar"><div class="tacFill" id="tacFill"></div></div>
+      <div class="tac" id="tacOut">Couverture d'encre totale : 160%</div>
+    </div>
+  </div>
+
+  <p class="help">💡 Le CMJN (Cyan, Magenta, Jaune, Noir) correspond aux 4 encres utilisées en impression. La couverture d'encre totale (TAC) doit rester sous ~300–320&nbsp;% pour un séchage correct du papier.</p>
+
+  <!-- Emplacement publicité (bas de page) — voir instructions AdSense
+  <div class="ad-slot">
+    <ins class="adsbygoogle" style="display:block" data-ad-client="ca-pub-XXXXXXXXXXXXXXXX" data-ad-slot="XXXXXXXXXX" data-ad-format="auto" data-full-width-responsive="true"></ins>
+    <script>(adsbygoogle = window.adsbygoogle || []).push({});</script>
+  </div>
+  -->
+
+  <footer>Studio Paradygm — outil de prévisualisation couleur pour impression</footer>
+
+</div>
 
 <script>
 (function(){
   "use strict";
   const c=document.getElementById("c"), m=document.getElementById("m"),
         y=document.getElementById("y"), k=document.getElementById("k");
-  const cVal=document.getElementById("cVal"), mVal=document.getElementById("mVal"),
-        yVal=document.getElementById("yVal"), kVal=document.getElementById("kVal");
+  const cNum=document.getElementById("cNum"), mNum=document.getElementById("mNum"),
+        yNum=document.getElementById("yNum"), kNum=document.getElementById("kNum");
   const swatch=document.getElementById("swatch"), hexOut=document.getElementById("hexOut"),
-        rgbOut=document.getElementById("rgbOut"), tacOut=document.getElementById("tacOut");
+        rgbOut=document.getElementById("rgbOut"), cmykOut=document.getElementById("cmykOut"),
+        tacOut=document.getElementById("tacOut"), tacFill=document.getElementById("tacFill");
+  const hexIn=document.getElementById("hexIn"), hexBtn=document.getElementById("hexBtn"),
+        hexRow=document.getElementById("hexRow"), hexHint=document.getElementById("hexHint");
+  const resetBtn=document.getElementById("resetBtn");
+
+  const DEFAULTS={c:65,m:95,y:0,k:0};
 
   // --- Modèle de Neugebauer / Demichel ---
   // Couleurs mesurées typiques des 8 aplats/surimpressions d'encres process
@@ -121,6 +231,35 @@
     return [Math.round(r), Math.round(g), Math.round(b)];
   }
 
+  // Recherche du meilleur réglage CMJN reproduisant une couleur RVB cible.
+  // Le modèle n'est pas inversible analytiquement (mélange non-linéaire des encres),
+  // on fait donc une recherche par grille grossière puis un raffinage local.
+  function rgbToCmyk(targetR, targetG, targetB){
+    function err(C,M,Y,K){
+      const [r,g,b]=cmykToRgb(C/100,M/100,Y/100,K/100);
+      const dr=r-targetR, dg=g-targetG, db=b-targetB;
+      return dr*dr+dg*dg+db*db;
+    }
+    let best={c:0,m:0,y:0,k:0,e:Infinity};
+    for(let C=0;C<=100;C+=5)
+      for(let M=0;M<=100;M+=5)
+        for(let Y=0;Y<=100;Y+=5)
+          for(let K=0;K<=100;K+=5){
+            const e=err(C,M,Y,K);
+            if(e<best.e) best={c:C,m:M,y:Y,k:K,e};
+          }
+    const lo=v=>Math.max(0,v-5), hi=v=>Math.min(100,v+5);
+    let refined={...best};
+    for(let C=lo(best.c);C<=hi(best.c);C++)
+      for(let M=lo(best.m);M<=hi(best.m);M++)
+        for(let Y=lo(best.y);Y<=hi(best.y);Y++)
+          for(let K=lo(best.k);K<=hi(best.k);K++){
+            const e=err(C,M,Y,K);
+            if(e<refined.e) refined={c:C,m:M,y:Y,k:K,e};
+          }
+    return refined;
+  }
+
   function update(){
     const C=c.value/100, M=m.value/100, Y=y.value/100, K=k.value/100;
     const [r,g,b]=cmykToRgb(C,M,Y,K);
@@ -129,20 +268,84 @@
     swatch.style.background=`rgb(${r},${g},${b})`;
     hexOut.textContent=hex;
     rgbOut.textContent=`rgb(${r}, ${g}, ${b})`;
+    cmykOut.textContent=`C${c.value} M${m.value} J${y.value} N${k.value}`;
 
-    cVal.textContent=c.value+"%"; mVal.textContent=m.value+"%";
-    yVal.textContent=y.value+"%"; kVal.textContent=k.value+"%";
+    cNum.value=c.value; mNum.value=m.value; yNum.value=y.value; kNum.value=k.value;
 
     const tac=(+c.value)+(+m.value)+(+y.value)+(+k.value);
-    tacOut.textContent=`Couverture d'encre totale : ${tac}%`;
-    tacOut.className="tac"+(tac>320?" over":"");
-    if(tac>320) tacOut.textContent+=" — au-delà de la limite offset courante (≈320%)";
+    tacFill.style.width=Math.min(100,tac/4)+"%";
+    let cls="tac", label=`Couverture d'encre totale : ${tac}%`;
+    if(tac>320){ cls+=" over"; label+=" — au-delà de la limite offset courante (≈320%)"; tacFill.style.background="#ff6a3d"; }
+    else if(tac>280){ cls+=" warn"; label+=" — proche de la limite courante"; tacFill.style.background="#e0a13a"; }
+    else{ tacFill.style.background="#4caf50"; }
+    tacOut.className=cls;
+    tacOut.textContent=label;
   }
 
-  [c,m,y,k].forEach(el=>el.addEventListener("input",update));
+  function syncFromSlider(slider, numInput){
+    numInput.value=slider.value;
+    update();
+  }
+  function syncFromNumber(slider, numInput){
+    let v=Math.round(+numInput.value);
+    if(isNaN(v)) v=0;
+    v=Math.max(0,Math.min(100,v));
+    numInput.value=v; slider.value=v;
+    update();
+  }
+
+  c.addEventListener("input",()=>syncFromSlider(c,cNum));
+  m.addEventListener("input",()=>syncFromSlider(m,mNum));
+  y.addEventListener("input",()=>syncFromSlider(y,yNum));
+  k.addEventListener("input",()=>syncFromSlider(k,kNum));
+  cNum.addEventListener("input",()=>syncFromNumber(c,cNum));
+  mNum.addEventListener("input",()=>syncFromNumber(m,mNum));
+  yNum.addEventListener("input",()=>syncFromNumber(y,yNum));
+  kNum.addEventListener("input",()=>syncFromNumber(k,kNum));
+
+  resetBtn.addEventListener("click",()=>{
+    c.value=DEFAULTS.c; m.value=DEFAULTS.m; y.value=DEFAULTS.y; k.value=DEFAULTS.k;
+    hexIn.value=""; hexRow.classList.remove("error"); hexHint.textContent="";
+    update();
+  });
+
+  function applyHex(){
+    const raw=hexIn.value.trim().replace(/^#/,"");
+    const valid=/^([0-9a-fA-F]{6}|[0-9a-fA-F]{3})$/.test(raw);
+    if(!valid){
+      hexRow.classList.add("error");
+      hexHint.textContent="Code HEX invalide (ex: #792A88).";
+      return;
+    }
+    const full = raw.length===3 ? raw.split("").map(ch=>ch+ch).join("") : raw;
+    const r=parseInt(full.slice(0,2),16), g=parseInt(full.slice(2,4),16), b=parseInt(full.slice(4,6),16);
+    hexRow.classList.remove("error");
+    hexHint.textContent="";
+    const {c:C,m:M,y:Y,k:K}=rgbToCmyk(r,g,b);
+    c.value=C; m.value=M; y.value=Y; k.value=K;
+    update();
+  }
+  hexBtn.addEventListener("click",applyHex);
+  hexIn.addEventListener("keydown",e=>{ if(e.key==="Enter") applyHex(); });
+
+  document.querySelectorAll(".copyBtn").forEach(btn=>{
+    btn.addEventListener("click",async ()=>{
+      const kind=btn.dataset.copy;
+      const text = kind==="hex" ? hexOut.textContent
+                 : kind==="rgb" ? rgbOut.textContent
+                 : cmykOut.textContent;
+      try{
+        await navigator.clipboard.writeText(text);
+        const original=btn.textContent;
+        btn.textContent="Copié !";
+        btn.classList.add("copied");
+        setTimeout(()=>{ btn.textContent=original; btn.classList.remove("copied"); },1200);
+      }catch(e){ /* clipboard indisponible (contexte non sécurisé) */ }
+    });
+  });
+
   update();
 })();
 </script>
-
 
 </body></html>
