@@ -1,0 +1,14 @@
+{
+  "$schema": "node_modules/wrangler/config-schema.json",
+  "name": "cmyk-picker",
+  "compatibility_date": "2026-07-20",
+  "observability": {
+    "enabled": true
+  },
+  "assets": {
+    "directory": "CMYK Picker"
+  },
+  "compatibility_flags": [
+    "nodejs_compat"
+  ]
+}
